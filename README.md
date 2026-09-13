@@ -110,7 +110,9 @@ it can also be meme images, here we mainly used clips.
 
 
 Team Contributions
+
 Aleesha: Extension
+
 Aishani: Backend and resourse gathering.
 
 ---
