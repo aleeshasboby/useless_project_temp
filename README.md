@@ -1,4 +1,4 @@
-Ragebait Player 🎯
+Ragebait Player ▶️
 Basic Details
 Team Name: Sector 45
 Team Members
@@ -25,9 +25,9 @@ Languages used: JavaScript, Python, HTML, CSS
 Frameworks used: FastAPI
 Libraries used: Chrome Extensions API (Manifest V3)
 Tools used: Chrome DevTools, Uvicorn, VS Code
-Implementation
 
-For Software:
+
+Implementation:
 
 Installation
 bash
@@ -46,9 +46,9 @@ Enable Developer mode
 Click "Load unpacked"
 Select the extension/ folder
 Open YouTube and play a video
-Project Documentation
 
-For Software:
+
+Project Documentation:
 
 Screenshots (Add at least 3)
 
@@ -121,5 +121,5 @@ it can also be meme images, here we mainly used clips.
 -Random funny audios interupting sound quality*
 
 Team Contributions
-Aleesha: Extension and Deployment
+Aleesha: Extension
 Aishani: Backend and resourse gathering.
