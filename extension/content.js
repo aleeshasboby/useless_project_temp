@@ -3,7 +3,7 @@
 
   const DEFAULTS = {
     enabled: true,
-    interval: 10,
+    interval: 15,
     volumeChaos: true,
     memeChaos: true,
     phantomAudio: true
@@ -18,6 +18,10 @@
   let chaosTimer = null;
   let phantomTimer = null;
   let phantomAudio = null;
+  let phantomRequestId = 0;
+  let phantomRequestActive = false;
+  let memeRequestId = 0;
+  let memeRequestActive = false;
   let lastVolume = null;
   let internalVolumeChange = false;
   let internalVolumeTimer = null;
@@ -246,13 +250,29 @@
       !settings.enabled ||
       !settings.memeChaos ||
       video.paused ||
-      !overlay
+      !overlay ||
+      memeRequestActive ||
+      phantomRequestActive ||
+      (phantomAudio && !phantomAudio.paused)
     ) {
       return;
     }
 
+    const requestId = ++memeRequestId;
+    memeRequestActive = true;
+
     try {
       const data = await getJson("/api/random-meme");
+
+      if (
+        requestId !== memeRequestId ||
+        !video ||
+        video.paused ||
+        !overlay ||
+        (phantomAudio && !phantomAudio.paused)
+      ) {
+        return;
+      }
 
       overlay.innerHTML = "";
 
@@ -293,6 +313,7 @@
 
       const hideMemeAndResume = () => {
         clearTimeout(memeTimeout);
+        memeRequestId++;
         overlay.classList.remove("ragebait-visible");
 
         video.removeEventListener("pause", syncPause);
@@ -328,19 +349,37 @@
 
     } catch (error) {
       console.warn("Ragebait meme request failed:", error);
+    } finally {
+      if (requestId === memeRequestId) {
+        memeRequestActive = false;
+      }
     }
   }
 
   async function playPhantomAudio() {
     if (!settings.enabled || !settings.phantomAudio) return;
 
-    // Block sound if a meme is active on screen
-    if (overlay && overlay.classList.contains("ragebait-visible")) {
+    if (
+      memeRequestActive ||
+      (overlay && overlay.classList.contains("ragebait-visible")) ||
+      (memeMedia && memeMedia.tagName === "VIDEO" && !memeMedia.paused)
+    ) {
       return;
     }
 
+    const requestId = ++phantomRequestId;
+    phantomRequestActive = true;
+
     try {
       const data = await getJson("/api/random-sound");
+
+      if (
+        requestId !== phantomRequestId ||
+        (overlay && overlay.classList.contains("ragebait-visible")) ||
+        (memeMedia && memeMedia.tagName === "VIDEO" && !memeMedia.paused)
+      ) {
+        return;
+      }
 
       if (!phantomAudio) {
         phantomAudio = new Audio();
@@ -352,7 +391,23 @@
       phantomAudio.currentTime = 0;
 
       await phantomAudio.play();
-    } catch (_) {}
+    } catch (_) {} finally {
+      if (requestId === phantomRequestId) {
+        phantomRequestActive = false;
+      }
+    }
+  }
+
+  function stopPhantomAudio() {
+    phantomRequestId++;
+    phantomRequestActive = false;
+
+    if (!phantomAudio) return;
+
+    phantomAudio.pause();
+    phantomAudio.currentTime = 0;
+    phantomAudio.removeAttribute("src");
+    phantomAudio.load();
   }
 
   function schedulePhantom() {
@@ -415,9 +470,7 @@
     }
 
     if (phantomAudio) {
-      phantomAudio.pause();
-      phantomAudio.removeAttribute("src");
-      phantomAudio.load();
+      stopPhantomAudio();
     }
   }
 
