@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ragebait</title>
+  <style>
+    body { width: 300px; margin: 0; padding: 18px; background:#111; color:#eee; font-family:Arial,sans-serif; }
+    h2 { margin:0 0 6px; }
+    p { color:#aaa; font-size:12px; line-height:1.45; }
+    label { display:flex; justify-content:space-between; margin:14px 0 7px; font-size:13px; }
+    input[type=range] { width:100%; }
+    .row { display:flex; gap:8px; margin-top:14px; }
+    button { flex:1; border:0; padding:9px; border-radius:7px; cursor:pointer; }
+    #on { background:#ff1744; color:#fff; }
+    #off { background:#333; color:#ddd; }
+    #status { margin-top:10px; font-size:12px; color:#8bc34a; }
+  </style>
+</head>
+<body>
+  <h2>Ragebait Player</h2>
+  <p>Turn normal YouTube playback into an intentionally frustrating experience.</p>
+
+  <label>Chaos frequency <span id="freqValue">10s</span></label>
+  <input id="frequency" type="range" min="5" max="30" value="10">
+
+  <label>Volume chaos <span id="volumeValue">ON</span></label>
+  <input id="volumeChaos" type="checkbox" checked>
+
+  <label>Meme interruptions <span id="memeValue">ON</span></label>
+  <input id="memeChaos" type="checkbox" checked>
+
+  <label>Phantom audio <span id="audioValue">ON</span></label>
+  <input id="phantomAudio" type="checkbox" checked>
+
+  <div class="row">
+    <button id="on">Enable</button>
+    <button id="off">Disable</button>
+  </div>
+  <div id="status">Loading...</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

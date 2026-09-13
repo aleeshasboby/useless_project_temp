@@ -1,0 +1,33 @@
+#ragebait-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.18);
+  pointer-events: none;
+}
+
+#ragebait-overlay.ragebait-visible {
+  display: flex !important;
+}
+
+#ragebait-overlay video,
+#ragebait-overlay img {
+  max-width: 72%;
+  max-height: 72%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 35px rgba(0,0,0,.8);
+  pointer-events: none;
+}
+
+.ragebait-sabotaged {
+  filter: blur(1.8px) contrast(.85) saturate(.7) !important;
+}
+
+.ragebait-heavy-sabotage {
+  filter: blur(3px) contrast(.7) saturate(.55) !important;
+  image-rendering: pixelated !important;
+}
