@@ -3,7 +3,7 @@
 
   const DEFAULTS = {
     enabled: true,
-    interval: 15,
+    interval: 10,
     volumeChaos: true,
     memeChaos: true,
     phantomAudio: true
@@ -20,11 +20,16 @@
   let phantomAudio = null;
   let lastVolume = null;
   let internalVolumeChange = false;
+  let internalVolumeTimer = null;
   let currentVideoListener = null;
   let navigationTimer = null;
   let playerCheckTimer = null;
   let lastUrl = location.href;
   let active = false;
+
+  // Resolution degradation tracking
+  let currentQualityLevel = 0;
+  let qualityResetTimer = null;
 
   function getVideo() {
     const player = document.getElementById("movie_player");
@@ -110,7 +115,10 @@
   }
 
   function onVolumeChange() {
-    if (!video || internalVolumeChange || !settings.enabled) return;
+    if (!video || !settings.enabled) return;
+
+    // Ignore volume shifts triggered automatically by volumeChaos
+    if (internalVolumeChange) return;
 
     const changedByUser =
       lastVolume !== null &&
@@ -119,7 +127,9 @@
     lastVolume = video.volume;
 
     if (changedByUser) {
-      sabotageQuality();
+      // Degrade resolution whenever user manually adjusts volume
+      currentQualityLevel++;
+      sabotageQuality(currentQualityLevel);
     }
   }
 
@@ -135,46 +145,89 @@
       ? Math.min(1, old + (0.25 + Math.random() * 0.55))
       : Math.max(0.03, old - (0.20 + Math.random() * 0.45));
 
+    // Flag internal update
     internalVolumeChange = true;
     video.volume = next;
-    internalVolumeChange = false;
-    lastVolume = next;
+    
+    // Capture exact fractional volume assigned by the browser
+    lastVolume = video.volume;
 
-    sabotageQuality();
+    // Wait for the async DOM volumechange event to settle before clearing flag
+    clearTimeout(internalVolumeTimer);
+    internalVolumeTimer = setTimeout(() => {
+      internalVolumeChange = false;
+    }, 500);
   }
 
-  function sabotageQuality() {
+  function sabotageQuality(level) {
     if (!video) return;
 
-    const heavy = Math.random() < 0.45;
+    // Step down quality progressively based on manual adjustments
+    let targetQuality = "large"; // 480p default start drop
+    let heavyVisual = false;
+
+    if (level === 1) {
+      targetQuality = "large";  // 480p
+    } else if (level === 2) {
+      targetQuality = "medium"; // 360p
+    } else if (level === 3) {
+      targetQuality = "small";  // 240p
+      heavyVisual = true;
+    } else if (level >= 4) {
+      targetQuality = "tiny";   // 144p
+      heavyVisual = true;
+    }
 
     video.classList.add("ragebait-sabotaged");
-    video.classList.toggle("ragebait-heavy-sabotage", heavy);
+    if (heavyVisual) {
+      video.classList.add("ragebait-heavy-sabotage");
+    }
 
     try {
       const player = document.getElementById("movie_player");
 
       if (player) {
         if (typeof player.setPlaybackQualityRange === "function") {
-          player.setPlaybackQualityRange(heavy ? "tiny" : "small");
+          player.setPlaybackQualityRange(targetQuality, targetQuality);
         }
 
         if (typeof player.setPlaybackQuality === "function") {
-          player.setPlaybackQuality(heavy ? "tiny" : "small");
+          player.setPlaybackQuality(targetQuality);
         }
       }
     } catch (_) {}
 
-    clearTimeout(sabotageQuality.restoreTimer);
+    // Reset resolution timer back to 5 seconds on every manual adjust
+    clearTimeout(qualityResetTimer);
 
-    sabotageQuality.restoreTimer = setTimeout(() => {
-      if (video) {
-        video.classList.remove(
-          "ragebait-sabotaged",
-          "ragebait-heavy-sabotage"
-        );
+    qualityResetTimer = setTimeout(() => {
+      restoreQuality();
+    }, 5000);
+  }
+
+  function restoreQuality() {
+    currentQualityLevel = 0;
+
+    if (video) {
+      video.classList.remove(
+        "ragebait-sabotaged",
+        "ragebait-heavy-sabotage"
+      );
+    }
+
+    try {
+      const player = document.getElementById("movie_player");
+
+      if (player) {
+        if (typeof player.setPlaybackQualityRange === "function") {
+          player.setPlaybackQualityRange("auto", "default");
+        }
+
+        if (typeof player.setPlaybackQuality === "function") {
+          player.setPlaybackQuality("auto");
+        }
       }
-    }, 3500);
+    } catch (_) {}
   }
 
   async function getJson(path) {
@@ -238,10 +291,7 @@
       };
 
       if (memeMedia.tagName === "VIDEO") {
-        // Play meme completely until the video ends
         memeMedia.addEventListener("ended", hideMemeAndResume, { once: true });
-
-        // Safety fallback: if video stalls or fails to play after 30 seconds
         memeTimeout = setTimeout(hideMemeAndResume, 30000);
 
         try {
@@ -253,7 +303,6 @@
           } catch (_) {}
         }
       } else {
-        // Display image/GIF memes for 5 seconds
         clearTimeout(memeTimeout);
         memeTimeout = setTimeout(hideMemeAndResume, 5000);
       }
@@ -287,7 +336,6 @@
 
     if (!settings.enabled || !settings.phantomAudio) return;
 
-    // Fixed audio interruption check to every 15 seconds
     phantomTimer = setTimeout(async () => {
       if (video && !video.paused) {
         await playPhantomAudio();
@@ -317,7 +365,6 @@
         }
       }
 
-      // Exact 15-second timer interval
       const intervalMs = (Number(settings.interval) || 15) * 1000;
       chaosTimer = setTimeout(chaosTick, intervalMs);
     }, 4000);
@@ -330,17 +377,14 @@
     clearTimeout(phantomTimer);
     clearTimeout(memeTimeout);
     clearTimeout(playerCheckTimer);
+    clearTimeout(qualityResetTimer);
+    clearTimeout(internalVolumeTimer);
+
+    restoreQuality();
 
     if (overlay) {
       overlay.classList.remove("ragebait-visible");
       overlay.innerHTML = "";
-    }
-
-    if (video) {
-      video.classList.remove(
-        "ragebait-sabotaged",
-        "ragebait-heavy-sabotage"
-      );
     }
 
     if (phantomAudio) {
