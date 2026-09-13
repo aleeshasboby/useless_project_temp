@@ -334,6 +334,11 @@
   async function playPhantomAudio() {
     if (!settings.enabled || !settings.phantomAudio) return;
 
+    // Block sound if a meme is active on screen
+    if (overlay && overlay.classList.contains("ragebait-visible")) {
+      return;
+    }
+
     try {
       const data = await getJson("/api/random-sound");
 
@@ -356,7 +361,10 @@
     if (!settings.enabled || !settings.phantomAudio) return;
 
     phantomTimer = setTimeout(async () => {
-      if (video && !video.paused) {
+      // Only play phantom sound if video is playing AND no meme overlay is visible
+      const isMemeActive = overlay && overlay.classList.contains("ragebait-visible");
+
+      if (video && !video.paused && !isMemeActive) {
         await playPhantomAudio();
       }
 
