@@ -86,29 +86,6 @@ Diagrams
                  memes/               sounds/
 
 
-ragebait-youtube/
-├── backend/
-│   ├── app/
-│   │   ├── routes/
-│   │   │   ├── assets.py
-│   │   │   └── chaos.py
-│   │   ├── static/
-│   │   │   ├── memes/
-│   │   │   └── sounds/
-│   │   ├── config.py
-│   │   └── main.py
-│   ├── requirements.txt
-│   └── README.md
-├── extension/
-│   ├── icons/
-│   ├── content.css
-│   ├── content.js
-│   ├── manifest.json
-│   ├── page-bridge.js
-│   ├── popup.html
-│   ├── popup.js
-│   └── README.md
-└── README.md
 
 Project Demo
 Video
