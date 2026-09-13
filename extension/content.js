@@ -275,9 +275,28 @@
       video.pause();
       overlay.classList.add("ragebait-visible");
 
+      // Pause/resume handlers to sync meme playback with user controls
+      const syncPause = () => {
+        if (memeMedia && memeMedia.tagName === "VIDEO") {
+          memeMedia.pause();
+        }
+      };
+
+      const syncPlay = () => {
+        if (memeMedia && memeMedia.tagName === "VIDEO" && overlay.classList.contains("ragebait-visible")) {
+          memeMedia.play().catch(() => {});
+        }
+      };
+
+      video.addEventListener("pause", syncPause);
+      video.addEventListener("play", syncPlay);
+
       const hideMemeAndResume = () => {
         clearTimeout(memeTimeout);
         overlay.classList.remove("ragebait-visible");
+
+        video.removeEventListener("pause", syncPause);
+        video.removeEventListener("play", syncPlay);
 
         if (memeMedia?.tagName === "VIDEO") {
           memeMedia.pause();
