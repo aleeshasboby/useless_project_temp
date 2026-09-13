@@ -57,7 +57,8 @@ Screenshots (Add at least 3)
 
   ![Screenshot1](./ss/s1.png)
   ![Screenshot3](./ss/s3.png)
-   *Memes interupting the peaceful watching youtube experience*
+     
+  *Memes interrupting the peaceful watching youtube experience*
 
 
 Diagrams
