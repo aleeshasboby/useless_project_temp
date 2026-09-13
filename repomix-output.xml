@@ -1,0 +1,1109 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+backend/
+  app/
+    routes/
+      __init__.py
+      assets.py
+      chaos.py
+    static/
+      memes/
+        green alien cat says yaer aegh erya 720p.mp4
+        Oo ai ee cat singing fein!!! #fein #music #hiphop #rap #artist #newmusic #cover #travisscott 720p.mp4
+        Rickroll {HD + No ads} 1080p.mp4
+        Stop it. Get some help. 720p (1).mp4
+        sunghooned.mp4
+        vidssave.com Cat laughing at you then explode 💀 480P.mp4
+        vidssave.com Cat Laughing Meme template #memes 720P.mp4
+        vidssave.com german cat meme 480P.mp4
+        vidssave.com skeleton banging shield 360P.mp4
+        vidssave.com What_ Meme 720p.mp4
+        WAIT A MINUTE   MEME  NO COPYRIGHT 480p.mp4
+      sounds/
+        videoplayback (1).m4a
+        videoplayback (2).m4a
+        videoplayback.m4a
+    __init__.py
+    config.py
+    main.py
+  README.md
+  requirements.txt
+extension/
+  icons/
+    icon.svg
+    icon128.png
+    icon16.png
+    icon32.png
+    icon48.png
+  content.css
+  content.js
+  manifest.json
+  page-bridge.js
+  popup.html
+  popup.js
+  README.md
+.gitignore
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="backend/app/routes/__init__.py">
+
+</file>
+
+<file path="backend/app/routes/assets.py">
+import os
+import random
+from urllib.parse import quote
+from fastapi import APIRouter, HTTPException, Request
+
+from app.config import MEMES_DIR, SOUNDS_DIR
+
+router = APIRouter(prefix="/api", tags=["Assets"])
+
+MEME_EXTENSIONS = {".gif", ".jpeg", ".jpg", ".mp4", ".png", ".webm", ".webp"}
+SOUND_EXTENSIONS = {".aac", ".m4a", ".mp3", ".ogg", ".wav", ".webm"}
+
+
+def asset_files(directory, extensions):
+    if not os.path.isdir(directory):
+        return []
+    return [
+        filename
+        for filename in os.listdir(directory)
+        if not filename.startswith(".")
+        and os.path.isfile(os.path.join(directory, filename))
+        and os.path.splitext(filename)[1].lower() in extensions
+    ]
+
+
+@router.get("/random-meme")
+def get_random_meme(request: Request):
+    files = asset_files(MEMES_DIR, MEME_EXTENSIONS)
+    if not files:
+        raise HTTPException(status_code=404, detail="No meme assets found")
+
+    chosen = random.choice(files)
+    ext = os.path.splitext(chosen)[1].lower()
+    media_type = "video" if ext in {".mp4", ".webm"} else "image"
+
+    return {
+        "url": str(request.base_url).rstrip("/") + f"/static/memes/{quote(chosen)}",
+        "media_type": media_type,
+        "filename": chosen
+    }
+
+
+@router.get("/random-sound")
+def get_random_sound(request: Request):
+    files = asset_files(SOUNDS_DIR, SOUND_EXTENSIONS)
+    if not files:
+        raise HTTPException(status_code=404, detail="No sound assets found")
+
+    chosen = random.choice(files)
+    return {
+        "url": str(request.base_url).rstrip("/") + f"/static/sounds/{quote(chosen)}",
+        "filename": chosen
+    }
+
+
+@router.get("/assets")
+def list_assets():
+    return {
+        "memes": asset_files(MEMES_DIR, MEME_EXTENSIONS),
+        "sounds": asset_files(SOUNDS_DIR, SOUND_EXTENSIONS)
+    }
+</file>
+
+<file path="backend/app/routes/chaos.py">
+from fastapi import APIRouter
+from app.config import CHAOS_CONFIG
+
+router = APIRouter(prefix="/api", tags=["Chaos"])
+
+
+@router.get("/chaos-config")
+def get_chaos_config():
+    return CHAOS_CONFIG
+</file>
+
+<file path="backend/app/__init__.py">
+
+</file>
+
+<file path="backend/app/config.py">
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+MEMES_DIR = os.path.join(STATIC_DIR, "memes")
+SOUNDS_DIR = os.path.join(STATIC_DIR, "sounds")
+
+CHAOS_CONFIG = {
+    "default_interval_seconds": 10,
+    "min_interval_seconds": 5,
+    "max_interval_seconds": 30,
+    "meme_duration_seconds": 3,
+    "phantom_audio_min_seconds": 7,
+    "phantom_audio_max_seconds": 20
+}
+</file>
+
+<file path="backend/app/main.py">
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from app.config import STATIC_DIR, MEMES_DIR, SOUNDS_DIR
+from app.routes import assets, chaos
+
+os.makedirs(MEMES_DIR, exist_ok=True)
+os.makedirs(SOUNDS_DIR, exist_ok=True)
+
+app = FastAPI(title="Ragebait YouTube Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://www.youtube.com",
+        "https://www.youtube-nocookie.com",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.include_router(assets.router)
+app.include_router(chaos.router)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "ragebait-youtube-backend"}
+</file>
+
+<file path="backend/README.md">
+# Ragebait YouTube Backend
+
+FastAPI serves random meme and phantom-audio assets to the Chrome extension.
+
+## Start
+
+From this `backend` folder:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Test:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/api/random-meme
+curl http://127.0.0.1:8000/api/random-sound
+```
+
+Put more meme videos/images into:
+
+`app/static/memes/`
+
+Put more sound files into:
+
+`app/static/sounds/`
+</file>
+
+<file path="backend/requirements.txt">
+fastapi
+uvicorn[standard]
+python-multipart
+</file>
+
+<file path="extension/icons/icon.svg">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+<rect width="128" height="128" rx="22" fill="#111"/>
+<path d="M25 38h78c8 0 15 7 15 15v22c0 8-7 15-15 15H25c-8 0-15-7-15-15V53c0-8 7-15 15-15z" fill="#ff1744"/>
+<path d="M52 51l29 13-29 13z" fill="white"/>
+</svg>
+</file>
+
+<file path="extension/content.css">
+#ragebait-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2147483646 !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.18);
+  pointer-events: none;
+}
+
+#ragebait-overlay.ragebait-visible {
+  display: flex !important;
+}
+
+#ragebait-overlay video,
+#ragebait-overlay img {
+  max-width: 72%;
+  max-height: 72%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 35px rgba(0,0,0,.8);
+  pointer-events: none;
+}
+
+.ragebait-sabotaged {
+  filter: blur(1.8px) contrast(.85) saturate(.7) !important;
+}
+
+.ragebait-heavy-sabotage {
+  filter: blur(3px) contrast(.7) saturate(.55) !important;
+  image-rendering: pixelated !important;
+}
+</file>
+
+<file path="extension/content.js">
+(() => {
+  const API = "http://localhost:8000";
+
+  const DEFAULTS = {
+    enabled: true,
+    interval: 10,
+    volumeChaos: true,
+    memeChaos: true,
+    phantomAudio: true
+  };
+
+  let settings = { ...DEFAULTS };
+  let video = null;
+  let playerContainer = null;
+  let overlay = null;
+  let memeMedia = null;
+  let memeTimeout = null;
+  let chaosTimer = null;
+  let phantomTimer = null;
+  let phantomAudio = null;
+  let lastVolume = null;
+  let internalVolumeChange = false;
+  let currentVideoListener = null;
+  let navigationTimer = null;
+  let playerCheckTimer = null;
+  let lastUrl = location.href;
+  let active = false;
+
+  function getVideo() {
+    // Only inspect the YouTube player area, rather than the whole document.
+    const player = document.getElementById("movie_player");
+    if (!player) return null;
+    return player.querySelector("video.html5-main-video") ||
+           player.querySelector("video");
+  }
+
+  function getPlayerContainer(v) {
+    if (!v) return null;
+    return document.getElementById("movie_player") ||
+           v.closest(".html5-video-player") ||
+           v.parentElement;
+  }
+
+  function ensureOverlay() {
+    if (!playerContainer) return;
+
+    if (!overlay || !document.contains(overlay)) {
+      overlay = document.createElement("div");
+      overlay.id = "ragebait-overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      playerContainer.appendChild(overlay);
+    }
+  }
+
+  function detachVideo() {
+    if (video && currentVideoListener) {
+      video.removeEventListener("volumechange", currentVideoListener);
+    }
+    video = null;
+    playerContainer = null;
+    overlay = null;
+    currentVideoListener = null;
+    lastVolume = null;
+  }
+
+  function attachToVideo() {
+    const found = getVideo();
+
+    if (!found) {
+      return false;
+    }
+
+    if (found === video && document.contains(found)) {
+      ensureOverlay();
+      return true;
+    }
+
+    detachVideo();
+
+    video = found;
+    playerContainer = getPlayerContainer(found);
+    ensureOverlay();
+
+    lastVolume = video.volume;
+
+    currentVideoListener = onVolumeChange;
+    video.addEventListener("volumechange", currentVideoListener);
+
+    return true;
+  }
+
+  function checkPlayer() {
+    if (!settings.enabled) return;
+
+    const found = getVideo();
+
+    if (found && found !== video) {
+      attachToVideo();
+      restartTimers();
+    } else if (!found && video) {
+      detachVideo();
+    }
+  }
+
+  function schedulePlayerCheck() {
+    clearTimeout(playerCheckTimer);
+    playerCheckTimer = setTimeout(() => {
+      checkPlayer();
+      // Only keep a low-frequency check while YouTube is changing pages.
+      playerCheckTimer = null;
+    }, 500);
+  }
+
+  function onVolumeChange() {
+    if (!video || internalVolumeChange || !settings.enabled) return;
+
+    const changedByUser =
+      lastVolume !== null &&
+      Math.abs(video.volume - lastVolume) > 0.001;
+
+    lastVolume = video.volume;
+
+    if (changedByUser) {
+      sabotageQuality();
+    }
+  }
+
+  function setVolumeChaos() {
+    if (!video || !settings.enabled || !settings.volumeChaos || video.paused) {
+      return;
+    }
+
+    const old = video.volume;
+    const spike = Math.random() < 0.5;
+
+    const next = spike
+      ? Math.min(1, old + (0.25 + Math.random() * 0.55))
+      : Math.max(0.03, old - (0.20 + Math.random() * 0.45));
+
+    internalVolumeChange = true;
+    video.volume = next;
+    internalVolumeChange = false;
+    lastVolume = next;
+
+    sabotageQuality();
+  }
+
+  function sabotageQuality() {
+    if (!video) return;
+
+    const heavy = Math.random() < 0.45;
+
+    video.classList.add("ragebait-sabotaged");
+    video.classList.toggle("ragebait-heavy-sabotage", heavy);
+
+    // YouTube exposes these methods in some player versions.
+    try {
+      const player = document.getElementById("movie_player");
+
+      if (player) {
+        if (typeof player.setPlaybackQualityRange === "function") {
+          player.setPlaybackQualityRange(heavy ? "tiny" : "small");
+        }
+
+        if (typeof player.setPlaybackQuality === "function") {
+          player.setPlaybackQuality(heavy ? "tiny" : "small");
+        }
+      }
+    } catch (_) {
+      // YouTube internals are not guaranteed; CSS remains the fallback.
+    }
+
+    clearTimeout(sabotageQuality.restoreTimer);
+
+    sabotageQuality.restoreTimer = setTimeout(() => {
+      if (video) {
+        video.classList.remove(
+          "ragebait-sabotaged",
+          "ragebait-heavy-sabotage"
+        );
+      }
+    }, 3500);
+  }
+
+  async function getJson(path) {
+    const response = await fetch(`${API}${path}`);
+
+    if (!response.ok) {
+      throw new Error(`Backend error: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async function showMeme() {
+    if (
+      !video ||
+      !settings.enabled ||
+      !settings.memeChaos ||
+      video.paused ||
+      !overlay
+    ) {
+      return;
+    }
+
+    try {
+      const data = await getJson("/api/random-meme");
+
+      overlay.innerHTML = "";
+
+      if (data.media_type === "video") {
+        memeMedia = document.createElement("video");
+        memeMedia.src = data.url;
+        memeMedia.autoplay = true;
+        memeMedia.muted = false;
+        memeMedia.playsInline = true;
+        memeMedia.controls = false;
+      } else {
+        memeMedia = document.createElement("img");
+        memeMedia.src = data.url;
+        memeMedia.alt = "Ragebait meme";
+      }
+
+      overlay.appendChild(memeMedia);
+
+      const wasPlaying = !video.paused;
+      video.pause();
+      overlay.classList.add("ragebait-visible");
+
+      const hideMemeAndResume = () => {
+        clearTimeout(memeTimeout);
+        overlay.classList.remove("ragebait-visible");
+
+        if (memeMedia?.tagName === "VIDEO") {
+          memeMedia.pause();
+          memeMedia.removeAttribute("src");
+          memeMedia.load();
+        }
+
+        if (wasPlaying && video && !video.ended) {
+          video.play().catch(() => {});
+        }
+      };
+
+      if (memeMedia.tagName === "VIDEO") {
+        // Listen for video completion before closing
+        memeMedia.addEventListener("ended", hideMemeAndResume, { once: true });
+
+        try {
+          await memeMedia.play();
+        } catch (_) {
+          // Fallback if browser blocks unmuted autoplay
+          memeMedia.muted = true;
+          try {
+            await memeMedia.play();
+          } catch (_) {}
+        }
+      } else {
+        // Display image/GIF memes for 15 seconds
+        clearTimeout(memeTimeout);
+        memeTimeout = setTimeout(hideMemeAndResume, 15000);
+      }
+
+    } catch (error) {
+      console.warn("Ragebait meme request failed:", error);
+    }
+  }
+
+  async function playPhantomAudio() {
+    if (!settings.enabled || !settings.phantomAudio) return;
+
+    try {
+      const data = await getJson("/api/random-sound");
+
+      if (!phantomAudio) {
+        phantomAudio = new Audio();
+        phantomAudio.volume = 0.45;
+        phantomAudio.preload = "auto";
+      }
+
+      phantomAudio.src = data.url;
+      phantomAudio.currentTime = 0;
+
+      await phantomAudio.play();
+    } catch (_) {
+      // Browser autoplay policy may block this.
+    }
+  }
+
+  function schedulePhantom() {
+    clearTimeout(phantomTimer);
+
+    if (!settings.enabled || !settings.phantomAudio) return;
+
+    phantomTimer = setTimeout(async () => {
+      if (video && !video.paused) {
+        await playPhantomAudio();
+      }
+
+      schedulePhantom();
+    }, 7000 + Math.random() * 13000);
+  }
+
+  function restartTimers() {
+    clearTimeout(chaosTimer);
+
+    if (!settings.enabled) return;
+
+    chaosTimer = setTimeout(async function chaosTick() {
+      if (!settings.enabled) return;
+
+      attachToVideo();
+
+      if (video && !video.paused) {
+        if (settings.volumeChaos) {
+          setVolumeChaos();
+        }
+
+        if (settings.memeChaos) {
+          await showMeme();
+        }
+      }
+
+      // Exact 15 second gap interval
+      const baseInterval = (Number(settings.interval) || 15) * 1000;
+
+      chaosTimer = setTimeout(chaosTick, baseInterval);
+    }, 4000);
+
+    schedulePhantom();
+  }
+
+  function disableEffects() {
+    clearTimeout(chaosTimer);
+    clearTimeout(phantomTimer);
+    clearTimeout(memeTimeout);
+    clearTimeout(playerCheckTimer);
+
+    if (overlay) {
+      overlay.classList.remove("ragebait-visible");
+      overlay.innerHTML = "";
+    }
+
+    if (video) {
+      video.classList.remove(
+        "ragebait-sabotaged",
+        "ragebait-heavy-sabotage"
+      );
+    }
+
+    if (phantomAudio) {
+      phantomAudio.pause();
+      phantomAudio.removeAttribute("src");
+      phantomAudio.load();
+    }
+  }
+
+  function handleUrlChange() {
+    if (location.href === lastUrl) return;
+
+    lastUrl = location.href;
+
+    clearTimeout(navigationTimer);
+
+    navigationTimer = setTimeout(() => {
+      detachVideo();
+      checkPlayer();
+      restartTimers();
+    }, 1200);
+  }
+
+  function setupNavigationHooks() {
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function (...args) {
+      const result = originalPushState.apply(this, args);
+      handleUrlChange();
+      schedulePlayerCheck();
+      return result;
+    };
+
+    history.replaceState = function (...args) {
+      const result = originalReplaceState.apply(this, args);
+      handleUrlChange();
+      schedulePlayerCheck();
+      return result;
+    };
+
+    window.addEventListener("popstate", () => {
+      handleUrlChange();
+      schedulePlayerCheck();
+    });
+
+    setInterval(() => {
+      if (location.href !== lastUrl) {
+        handleUrlChange();
+      }
+    }, 1500);
+  }
+
+  async function loadSettings() {
+    settings = {
+      ...DEFAULTS,
+      ...(await chrome.storage.local.get(DEFAULTS))
+    };
+
+    if (!settings.enabled) {
+      disableEffects();
+      return;
+    }
+
+    active = true;
+    schedulePlayerCheck();
+    restartTimers();
+  }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local") return;
+
+    for (const [key, change] of Object.entries(changes)) {
+      settings[key] = change.newValue;
+    }
+
+    if (!settings.enabled) {
+      active = false;
+      disableEffects();
+      return;
+    }
+
+    active = true;
+    schedulePlayerCheck();
+    restartTimers();
+  });
+
+  setupNavigationHooks();
+
+  window.setTimeout(() => {
+    if (!active) {
+      loadSettings();
+    }
+  }, 2000);
+})();
+</file>
+
+<file path="extension/manifest.json">
+{
+  "manifest_version": 3,
+  "name": "Ragebait YouTube Player",
+  "version": "1.0.0",
+  "description": "Intentionally frustrating YouTube playback: volume chaos, quality sabotage, meme interruptions and phantom audio.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://www.youtube-nocookie.com/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_title": "Ragebait YouTube Player",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["page-bridge.js"],
+      "matches": ["https://www.youtube.com/*"]
+    }
+  ]
+}
+</file>
+
+<file path="extension/page-bridge.js">
+// Reserved for future YouTube page-context integrations.
+// MV3 content scripts run in an isolated world. The main content script already
+// uses the public HTML5 video element and the YouTube player object when exposed.
+</file>
+
+<file path="extension/popup.html">
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ragebait</title>
+  <style>
+    body { width: 300px; margin: 0; padding: 18px; background:#111; color:#eee; font-family:Arial,sans-serif; }
+    h2 { margin:0 0 6px; }
+    p { color:#aaa; font-size:12px; line-height:1.45; }
+    label { display:flex; justify-content:space-between; margin:14px 0 7px; font-size:13px; }
+    input[type=range] { width:100%; }
+    .row { display:flex; gap:8px; margin-top:14px; }
+    button { flex:1; border:0; padding:9px; border-radius:7px; cursor:pointer; }
+    #on { background:#ff1744; color:#fff; }
+    #off { background:#333; color:#ddd; }
+    #status { margin-top:10px; font-size:12px; color:#8bc34a; }
+  </style>
+</head>
+<body>
+  <h2>Ragebait Player</h2>
+  <p>Turn normal YouTube playback into an intentionally frustrating experience.</p>
+
+  <label>Chaos frequency <span id="freqValue">10s</span></label>
+  <input id="frequency" type="range" min="5" max="30" value="10">
+
+  <label>Volume chaos <span id="volumeValue">ON</span></label>
+  <input id="volumeChaos" type="checkbox" checked>
+
+  <label>Meme interruptions <span id="memeValue">ON</span></label>
+  <input id="memeChaos" type="checkbox" checked>
+
+  <label>Phantom audio <span id="audioValue">ON</span></label>
+  <input id="phantomAudio" type="checkbox" checked>
+
+  <div class="row">
+    <button id="on">Enable</button>
+    <button id="off">Disable</button>
+  </div>
+  <div id="status">Loading...</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+</file>
+
+<file path="extension/popup.js">
+const defaults = {
+  enabled: true,
+  interval: 10,
+  volumeChaos: true,
+  memeChaos: true,
+  phantomAudio: true
+};
+
+async function load() {
+  const s = await chrome.storage.local.get(defaults);
+  document.querySelector("#frequency").value = s.interval;
+  document.querySelector("#freqValue").textContent = `${s.interval}s`;
+  document.querySelector("#volumeChaos").checked = s.volumeChaos;
+  document.querySelector("#memeChaos").checked = s.memeChaos;
+  document.querySelector("#phantomAudio").checked = s.phantomAudio;
+  document.querySelector("#status").textContent = s.enabled ? "Ragebait is enabled" : "Ragebait is disabled";
+}
+
+async function save(patch) {
+  await chrome.storage.local.set(patch);
+  await load();
+}
+
+document.querySelector("#frequency").addEventListener("input", e => {
+  document.querySelector("#freqValue").textContent = `${e.target.value}s`;
+});
+document.querySelector("#frequency").addEventListener("change", e => save({ interval: Number(e.target.value) }));
+document.querySelector("#volumeChaos").addEventListener("change", e => save({ volumeChaos: e.target.checked }));
+document.querySelector("#memeChaos").addEventListener("change", e => save({ memeChaos: e.target.checked }));
+document.querySelector("#phantomAudio").addEventListener("change", e => save({ phantomAudio: e.target.checked }));
+document.querySelector("#on").addEventListener("click", () => save({ enabled: true }));
+document.querySelector("#off").addEventListener("click", () => save({ enabled: false }));
+
+load();
+</file>
+
+<file path="extension/README.md">
+# Ragebait YouTube Player — Chrome Extension
+
+This version injects the ragebait effects into YouTube without continuously observing the
+entire YouTube DOM. The player is checked only around the YouTube player and after navigation.
+
+## Features
+
+- Random YouTube volume spikes/drops
+- Volume adjustment triggers quality sabotage
+- Attempts to use YouTube's quality API (`small`/`tiny`) when exposed
+- CSS degradation fallback
+- Meme image/GIF/video appears **inside the YouTube player**
+- Original YouTube video pauses for about 3 seconds and resumes
+- Independent phantom audio
+- Works with YouTube SPA navigation
+- Popup controls for enabling/disabling effects and changing frequency
+
+## Install
+
+1. Start the backend.
+2. Open `chrome://extensions`.
+3. Enable Developer mode.
+4. Click Load unpacked.
+5. Select this `extension` folder.
+6. Refresh YouTube.
+
+## Backend
+
+The extension expects:
+
+`http://localhost:8000`
+
+## Important
+
+YouTube changes its internal player implementation periodically. Actual playback-quality forcing
+is therefore best-effort. The CSS degradation is used as a visual fallback.
+
+The extension deliberately avoids a whole-document MutationObserver because YouTube is a large
+single-page application and aggressively observing its complete DOM can interfere with page loading.
+</file>
+
+<file path=".gitignore">
+backend/.venv/
+__pycache__/
+*.pyc
+.DS_Store
+</file>
+
+<file path="README.md">
+# Project Report: Ragebait YouTube Player
+
+## 1. Overview
+
+**Project Name:** Ragebait YouTube Player
+**Type:** Chrome Extension (Manifest V3) + FastAPI Backend Service
+**Category:** Entertainment / Prank Tooling
+**Status:** In development
+
+Ragebait YouTube Player is an intentionally disruptive Chrome extension designed to inject chaotic, unpredictable behavior into a user's own YouTube playback experience for comedic effect. Rather than opening separate popups or overlays outside the page, all chaos effects — including meme playback — are designed to occur **inside the native YouTube player**, preserving the illusion that YouTube itself is misbehaving.
+
+The system is composed of two decoupled components: a browser-side extension responsible for DOM manipulation and playback interference, and a lightweight backend service responsible for supplying randomized chaos assets (memes, sounds) and configuration.
+
+---
+
+## 2. Objectives
+
+The extension should, on a running YouTube video:
+
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | Volume Chaos | Randomly increase or decrease YouTube's playback volume |
+| 2 | Visual/Quality Punishment | Tie volume adjustments to a visual or quality-based penalty |
+| 3 | Quality Sabotage | Attempt to lower YouTube's actual playback resolution/quality |
+| 4 | In-Player Meme Interrupt | Pause the video and play a meme *inside* the existing YouTube player element |
+| 5 | Playback Resume | Resume the original video automatically once the meme finishes |
+| 6 | Phantom Audio | Play random background audio independent of and unrelated to the YouTube video's own audio track |
+| 7 | SPA Navigation Support | Continue functioning correctly across YouTube's single-page-app style navigation (video-to-video transitions without full page reloads) |
+| 8 | User Control | Provide a popup UI allowing individual chaos features to be toggled on/off |
+
+---
+
+## 3. System Architecture
+
+```
+                    ┌─────────────────────────┐
+                    │        YouTube           │
+                    │  <video> + player UI     │
+                    └────────────┬─────────────┘
+                                 │
+                        Chrome Extension
+                                 │
+             ┌───────────────────┴───────────────────┐
+             │                                         │
+       content.js                                 popup.js
+             │                                         │
+             └───────────────┬─────────────────────────┘
+                              │ HTTP
+                              ▼
+                    ┌───────────────────┐
+                    │  FastAPI Backend   │
+                    │  localhost:8000    │
+                    └─────────┬─────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │                   │
+                 memes/               sounds/
+```
+
+### 3.1 Component Summary
+
+- **content.js** — injected into `youtube.com`, handles DOM/video detection, chaos timers, volume manipulation, quality sabotage attempts, in-player meme overlay injection, and phantom audio playback.
+- **page-bridge.js** — a page-context script (not isolated-world) used to reach YouTube's internal player API where content scripts cannot, communicating back to `content.js` via `window.postMessage` or custom events.
+- **popup.js / popup.html** — the extension's toolbar popup UI, allowing the user to enable/disable individual chaos features.
+- **FastAPI backend** — serves chaos configuration, and random meme/sound assets over HTTP to the extension.
+
+### 3.2 Important Technical Note
+
+A Chrome content script cannot modify YouTube's actual source code or its internal player logic — it can only interact with the page as rendered, through the DOM and any APIs YouTube chooses to expose. Because YouTube's internal player API (`ytplayer`, `movie_player`, etc.) is undocumented and subject to change without notice, the extension follows a **fallback strategy**:
+
+1. Attempt to use YouTube's exposed player quality-control methods (e.g. `setPlaybackQualityRange`) via `page-bridge.js`.
+2. If unavailable or non-functional, fall back to **CSS-based visual degradation** (blur, pixelation filters, downscaling the video element) to simulate a quality drop.
+
+---
+
+## 4. Team Responsibilities
+
+### 4.1 Aleesha — Frontend / Extension
+
+- Chrome MV3 extension scaffolding and manifest configuration
+- YouTube DOM and `<video>` element detection
+- Chaos timer scheduling logic
+- Volume manipulation logic
+- Quality sabotage (player API + CSS fallback)
+- In-player meme overlay implementation
+- Phantom background audio playback
+- Extension popup UI and feature toggles
+- CSS-based visual effects
+
+### 4.2 Aishani — Backend
+
+- FastAPI server setup
+- CORS configuration for extension-origin requests
+- Chaos configuration endpoint
+- Random meme endpoint
+- Random sound endpoint
+- Static asset serving (`memes/`, `sounds/`)
+
+---
+
+## 5. Folder Structure
+
+```
+ragebait-youtube/
+├── backend/
+│   ├── app/
+│   │   ├── routes/
+│   │   │   ├── assets.py
+│   │   │   └── chaos.py
+│   │   ├── static/
+│   │   │   ├── memes/
+│   │   │   └── sounds/
+│   │   ├── config.py
+│   │   └── main.py
+│   ├── requirements.txt
+│   └── README.md
+├── extension/
+│   ├── icons/
+│   ├── content.css
+│   ├── content.js
+│   ├── manifest.json
+│   ├── page-bridge.js
+│   ├── popup.html
+│   ├── popup.js
+│   └── README.md
+└── README.md
+```
+
+---
+
+## 6. Setup & Run Instructions
+
+### 6.1 Backend
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 6.2 Extension
+
+1. Navigate to `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the `extension/` folder
+5. Open YouTube and play a video
+
+---
+
+## 7. Risks & Limitations
+
+- **API fragility:** YouTube's internal player API is undocumented and may change at any time, breaking the quality-sabotage feature until the CSS fallback is verified to still work.
+- **CORS/local backend dependency:** The extension depends on a locally running FastAPI server (`localhost:8000`); if the backend is not running, meme/sound features will silently fail unless error handling is added.
+- **SPA navigation edge cases:** YouTube's client-side routing means `content.js` must re-attach listeners on navigation events (e.g. `yt-navigate-finish`) rather than relying on a single page load.
+- **Autoplay/audio policy:** Chrome's autoplay policies may block phantom audio playback until user interaction has occurred on the page.
+
+---
+
+## 8. Future Enhancements (Not Yet Scoped)
+
+- Persisted user preferences (chaos intensity levels, per-channel exclusions)
+- Expanded meme/sound libraries with tagging/categorization
+- A "chaos intensity" slider rather than binary per-feature toggles
+- Packaging for the Chrome Web Store
+</file>
+
+</files>

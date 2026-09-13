@@ -3,7 +3,7 @@
 
   const DEFAULTS = {
     enabled: true,
-    interval: 10,
+    interval: 15,
     volumeChaos: true,
     memeChaos: true,
     phantomAudio: true
@@ -27,7 +27,6 @@
   let active = false;
 
   function getVideo() {
-    // Only inspect the YouTube player area, rather than the whole document.
     const player = document.getElementById("movie_player");
     if (!player) return null;
     return player.querySelector("video.html5-main-video") ||
@@ -106,7 +105,6 @@
     clearTimeout(playerCheckTimer);
     playerCheckTimer = setTimeout(() => {
       checkPlayer();
-      // Only keep a low-frequency check while YouTube is changing pages.
       playerCheckTimer = null;
     }, 500);
   }
@@ -153,7 +151,6 @@
     video.classList.add("ragebait-sabotaged");
     video.classList.toggle("ragebait-heavy-sabotage", heavy);
 
-    // YouTube exposes these methods in some player versions.
     try {
       const player = document.getElementById("movie_player");
 
@@ -166,9 +163,7 @@
           player.setPlaybackQuality(heavy ? "tiny" : "small");
         }
       }
-    } catch (_) {
-      // YouTube internals are not guaranteed; CSS remains the fallback.
-    }
+    } catch (_) {}
 
     clearTimeout(sabotageQuality.restoreTimer);
 
@@ -227,21 +222,8 @@
       video.pause();
       overlay.classList.add("ragebait-visible");
 
-      if (memeMedia.tagName === "VIDEO") {
-        try {
-          await memeMedia.play();
-        } catch (_) {
-          // Browser autoplay can block sound.
-          memeMedia.muted = true;
-          try {
-            await memeMedia.play();
-          } catch (_) {}
-        }
-      }
-
-      clearTimeout(memeTimeout);
-
-      memeTimeout = setTimeout(() => {
+      const hideMemeAndResume = () => {
+        clearTimeout(memeTimeout);
         overlay.classList.remove("ragebait-visible");
 
         if (memeMedia?.tagName === "VIDEO") {
@@ -253,7 +235,28 @@
         if (wasPlaying && video && !video.ended) {
           video.play().catch(() => {});
         }
-      }, 3000);
+      };
+
+      if (memeMedia.tagName === "VIDEO") {
+        // Play meme completely until the video ends
+        memeMedia.addEventListener("ended", hideMemeAndResume, { once: true });
+
+        // Safety fallback: if video stalls or fails to play after 30 seconds
+        memeTimeout = setTimeout(hideMemeAndResume, 30000);
+
+        try {
+          await memeMedia.play();
+        } catch (_) {
+          memeMedia.muted = true;
+          try {
+            await memeMedia.play();
+          } catch (_) {}
+        }
+      } else {
+        // Display image/GIF memes for 5 seconds
+        clearTimeout(memeTimeout);
+        memeTimeout = setTimeout(hideMemeAndResume, 5000);
+      }
 
     } catch (error) {
       console.warn("Ragebait meme request failed:", error);
@@ -276,9 +279,7 @@
       phantomAudio.currentTime = 0;
 
       await phantomAudio.play();
-    } catch (_) {
-      // Browser autoplay policy may block this.
-    }
+    } catch (_) {}
   }
 
   function schedulePhantom() {
@@ -286,13 +287,14 @@
 
     if (!settings.enabled || !settings.phantomAudio) return;
 
+    // Fixed audio interruption check to every 15 seconds
     phantomTimer = setTimeout(async () => {
       if (video && !video.paused) {
         await playPhantomAudio();
       }
 
       schedulePhantom();
-    }, 7000 + Math.random() * 13000);
+    }, 15000);
   }
 
   function restartTimers() {
@@ -300,7 +302,6 @@
 
     if (!settings.enabled) return;
 
-    // Do not immediately manipulate a newly-created YouTube player.
     chaosTimer = setTimeout(async function chaosTick() {
       if (!settings.enabled) return;
 
@@ -311,17 +312,14 @@
           setVolumeChaos();
         }
 
-        if (settings.memeChaos && Math.random() < 0.45) {
+        if (settings.memeChaos) {
           await showMeme();
         }
       }
 
-      const base = Math.max(5, Number(settings.interval) || 10) * 1000;
-
-      chaosTimer = setTimeout(
-        chaosTick,
-        base * (0.7 + Math.random() * 0.9)
-      );
+      // Exact 15-second timer interval
+      const intervalMs = (Number(settings.interval) || 15) * 1000;
+      chaosTimer = setTimeout(chaosTick, intervalMs);
     }, 4000);
 
     schedulePhantom();
@@ -359,7 +357,6 @@
 
     clearTimeout(navigationTimer);
 
-    // Give YouTube time to replace its player before we attach.
     navigationTimer = setTimeout(() => {
       detachVideo();
       checkPlayer();
@@ -390,7 +387,6 @@
       schedulePlayerCheck();
     });
 
-    // Very lightweight fallback for YouTube navigation.
     setInterval(() => {
       if (location.href !== lastUrl) {
         handleUrlChange();
@@ -432,7 +428,6 @@
     restartTimers();
   });
 
-  // Start only after YouTube's initial document has settled.
   setupNavigationHooks();
 
   window.setTimeout(() => {
