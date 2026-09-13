@@ -112,7 +112,7 @@ ragebait-youtube/
 
 Project Demo
 Video
-![Screen recording](./ss/sv.mp4)
+![Screen recording](https://drive.google.com/drive/folders/117zdP0SpQVYCHCJMOemp7xZDe94OViPI?usp=sharing)
 *The video demonstrates the working of the extentions and its features which include, 
 -Quality or Resolution dropping when we increase the volume
 -Randomly the volume drops
